@@ -1,0 +1,106 @@
+// =====================================================================
+// Digital Media Planning & Budget Tracker - Power BI DAX
+// Tables loaded from Data/Digital_Media_Planning_Tracker.xlsx (or the CSVs):
+//   Campaigns, Vendors, Spend_Log, Invoices, Tasks
+// Create these in Power BI Desktop: Modeling > New table / New column / New measure
+// =====================================================================
+
+// ---------- 1. Date table (Modeling > New table), then Mark as date table ----------
+Date =
+ADDCOLUMNS (
+    CALENDAR ( DATE ( 2026, 9, 1 ), DATE ( 2026, 12, 31 ) ),
+    "Year", YEAR ( [Date] ),
+    "Month", FORMAT ( [Date], "MMM YYYY" ),
+    "MonthNo", YEAR ( [Date] ) * 100 + MONTH ( [Date] )
+)
+// Select Date[Month] > Column tools > Sort by column > MonthNo
+
+// ---------- 2. Report date parameter (Modeling > New table) ----------
+Report Date = DATATABLE ( "Report Date", DATETIME, { { "2026-11-23" } } )
+// For live tracking replace with:  Report Date = ROW ( "Report Date", TODAY () )
+
+// ---------- 3. Calculated columns ----------
+// Invoices table > New column
+Payment Status =
+VAR rd = MAX ( 'Report Date'[Report Date] )
+RETURN
+    IF (
+        NOT ISBLANK ( Invoices[Payment Date] ), "Paid",
+        IF ( Invoices[Due Date] < rd, "Overdue", "Pending" )
+    )
+
+Days Overdue =
+VAR rd = MAX ( 'Report Date'[Report Date] )
+RETURN IF ( Invoices[Payment Status] = "Overdue", INT ( rd - Invoices[Due Date] ), 0 )
+
+// Tasks table > New column
+Delay Flag =
+VAR rd = MAX ( 'Report Date'[Report Date] )
+RETURN IF ( Tasks[Status] <> "Completed" && Tasks[End Date] < rd, "Delayed", "On Track" )
+
+// Campaigns table > New column (used by the forecast measure)
+Campaign Days = INT ( Campaigns[End Date] - Campaigns[Start Date] ) + 1
+
+// ---------- 4. Measures (create a blank "Measures" table to hold them) ----------
+Total Budget = SUM ( Campaigns[Planned Budget] )
+
+Actual Spend = SUM ( Spend_Log[Amount] )
+
+Remaining Budget = [Total Budget] - [Actual Spend]
+
+Budget Utilization % = DIVIDE ( [Actual Spend], [Total Budget], 0 )
+// Format as Percentage, 1 decimal
+
+Total Campaigns = DISTINCTCOUNT ( Campaigns[Campaign ID] )
+
+Active Campaigns = CALCULATE ( [Total Campaigns], Campaigns[Status] = "Active" )
+
+Active Vendors = CALCULATE ( COUNTROWS ( Vendors ), Vendors[Status] = "Active" )
+
+Total Invoiced = SUM ( Invoices[Invoice Amount] )
+
+Paid Amount = CALCULATE ( [Total Invoiced], Invoices[Payment Status] = "Paid" )
+
+Pending Amount = CALCULATE ( [Total Invoiced], Invoices[Payment Status] = "Pending" )
+
+Overdue Amount = CALCULATE ( [Total Invoiced], Invoices[Payment Status] = "Overdue" )
+
+Pending Invoices =
+CALCULATE ( COUNTROWS ( Invoices ), Invoices[Payment Status] IN { "Pending", "Overdue" } )
+
+Overdue Invoices = CALCULATE ( COUNTROWS ( Invoices ), Invoices[Payment Status] = "Overdue" )
+
+Outstanding Amount = [Total Invoiced] - [Paid Amount]
+
+Not Yet Invoiced = [Actual Spend] - [Total Invoiced]
+
+Delayed Deliverables =
+CALCULATE (
+    COUNTROWS ( Tasks ),
+    Tasks[Type] = "Deliverable",
+    Tasks[Delay Flag] = "Delayed"
+)
+
+// Forecast spend at current daily pace, summed campaign by campaign
+Forecast Spend =
+VAR rd = MAX ( 'Report Date'[Report Date] )
+RETURN
+    SUMX (
+        Campaigns,
+        VAR spent = CALCULATE ( SUM ( Spend_Log[Amount] ) )
+        VAR elapsed = INT ( MIN ( rd, Campaigns[End Date] ) - Campaigns[Start Date] ) + 1
+        RETURN
+            IF (
+                Campaigns[Status] = "Active" && elapsed > 0,
+                DIVIDE ( spent, elapsed ) * Campaigns[Campaign Days],
+                spent
+            )
+    )
+
+Forecast vs Plan = [Forecast Spend] - [Total Budget]
+
+// Dynamic headline for a card or text box
+Headline =
+"Spent " & FORMAT ( [Budget Utilization %], "0%" ) & " of "
+    & FORMAT ( [Total Budget], "₹#,##,##0" ) & " | Overdue invoices: "
+    & FORMAT ( [Overdue Amount], "₹#,##,##0" )

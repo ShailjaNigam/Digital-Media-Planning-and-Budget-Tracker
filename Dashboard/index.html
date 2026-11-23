@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Media Budget Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a newspaper graphics desk reporting on one marketing budget - finding first, then evidence, then what to do.
+   IDEA: the media plan as a weekly ledger page: ruled panels, one red tab, numbers set like a market table.
+   PICTURE: planned-vs-actual bullet bars per platform, with a forecast tick showing where each line will land.
+   COLOUR and TYPE: white ground, ink #121212, red tab, slate links, pale panels; validated series blue/orange; Source Serif 4 + Inter.
+   LAYOUT: tab + headline, filter row, KPI strip, main chart beside insights, chart grid, module tabs, data panel. */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#10191e);--ink:light-dark(#121212,#eef2f4);--muted:light-dark(#52514e,#a9b6bd);
+--panel:light-dark(#e3ecf0,#18252c);--rule:light-dark(#d5dde1,#2b3b43);--red:light-dark(#e3120b,#ff5d52);
+--slate:light-dark(#2e6f8e,#86bcd6);--track:light-dark(#c9d5db,#33454e);--track-bg:light-dark(#f4f7f8,#1d2b32);
+--s1:light-dark(#2a78d6,#3987e5);--s2:light-dark(#eb6834,#d95926);--s3:light-dark(#1baf7a,#199e70);--s4:light-dark(#eda100,#c98500);--s5:light-dark(#e87ba4,#d55181);
+--good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--neutral:light-dark(#98a4aa,#5f6e75)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}html{scroll-padding-top:72px}
+h1,h2{font-family:"Source Serif 4",Georgia,serif;font-weight:600;line-height:1.08;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,4.2vw,46px);max-width:24ch}
+h2{font-size:22px;margin-bottom:4px}
+.tab{display:inline-block;background:var(--red);color:#fff;font-weight:600;font-size:13px;padding:4px 10px;margin-bottom:14px}
+.dek{color:var(--muted);max-width:70ch;margin:12px 0 0}
+.note{font-size:13px;color:var(--muted)}
+header.band{padding-bottom:12px}
+.filters{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);padding:14px 0}
+.filters label{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
+select,input[type=date],button,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--track);border-radius:6px;min-height:44px;padding:0 10px}
+textarea{width:100%;min-height:160px;padding:10px;font:13px/1.4 ui-monospace,monospace}
+button{cursor:pointer;font-weight:600;background:var(--panel);border-color:var(--panel)}
+button:hover{border-color:var(--slate)}
+:focus-visible{outline:3px solid var(--slate);outline-offset:2px}
+nav.views{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--rule);margin-top:6px}
+nav.views a{flex:none;padding:12px 14px;color:var(--muted);text-decoration:none;font-weight:600;font-size:15px;border-bottom:3px solid transparent}
+nav.views a[aria-current=page]{color:var(--ink);border-color:var(--red)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));border-top:1px solid var(--rule);border-left:1px solid var(--rule);margin:18px 0}
+.kpi{padding:14px 14px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:clamp(22px,2.4vw,28px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.01em}
+.kpi .s{font-size:13px;color:var(--muted)}
+.kpi.alert .v{color:var(--crit)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.grid.main{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.panel{border-top:2px solid var(--ink);padding-top:12px}
+.panel.shade{background:var(--panel);border-top:0;padding:16px 18px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin:6px 0 10px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+.rows{display:grid;gap:12px}
+.row{display:grid;grid-template-columns:8.5em minmax(0,1fr) 7.5em;gap:10px;align-items:center;font-size:14px}
+.row .n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bullet{position:relative;height:26px;background:var(--track-bg);border-radius:4px}
+.bullet .plan{position:absolute;inset:0 auto 0 0;border:1.5px solid var(--track);border-radius:4px}
+.bullet .act{position:absolute;left:0;top:6px;bottom:6px;background:var(--s1);border-radius:0 4px 4px 0}
+.bullet .act.hot{background:var(--s2)}
+.bullet .fc{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink)}
+.bar{height:16px;background:var(--s1);border-radius:0 4px 4px 0;min-width:2px}
+.stackbar{display:flex;height:34px;gap:2px;border-radius:4px;overflow:hidden}
+.stackbar div{min-width:2px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}
+.cols{display:flex;align-items:flex-end;gap:14px;height:200px;border-bottom:1px solid var(--track);padding-top:22px}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative}
+.col .b{width:min(70%,90px);background:var(--s1);border-radius:4px 4px 0 0;min-height:2px}
+.col .t{font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.collab{display:flex;gap:14px}.collab div{flex:1;text-align:center;font-size:13px;color:var(--muted);padding-top:6px}
+.ins{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+.ins li{padding-left:14px;border-left:3px solid var(--slate);font-size:15px}
+.ins li.bad{border-color:var(--crit)}
+.ins b{font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:13px;color:var(--muted);font-weight:600;border-bottom:2px solid var(--ink);padding:8px 10px 6px}
+td{border-bottom:1px solid var(--rule);padding:9px 10px;vertical-align:top}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.nw{white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap}
+.chip::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c,var(--neutral))}
+.mini{height:8px;background:var(--track-bg);border-radius:4px;margin-top:5px;max-width:120px}
+.mini i{display:block;height:100%;background:var(--s1);border-radius:4px}
+.gantt{position:relative;font-size:13px}
+.gscale{position:relative;height:22px;margin-left:var(--gl);border-bottom:1px solid var(--track)}
+.gscale span{position:absolute;transform:translateX(-50%);color:var(--muted);white-space:nowrap}
+.grow{display:grid;grid-template-columns:var(--gl) minmax(0,1fr);align-items:center;min-height:30px;border-bottom:1px solid var(--rule)}
+.grow .gn{padding-right:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grow .gn small{color:var(--muted)}
+.gtrack{position:relative;height:30px}
+.gbar{position:absolute;top:8px;height:14px;border-radius:3px;background:var(--c)}
+.ghead{font-weight:700;padding:12px 0 4px;border-bottom:1px solid var(--ink)}
+.today{position:absolute;top:0;bottom:0;border-left:2px solid var(--red);pointer-events:none;z-index:1}
+.today span{position:absolute;top:-20px;left:4px;color:var(--red);font-weight:600;white-space:nowrap;font-size:12px}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;padding:6px 9px;border-radius:5px;max-width:260px;z-index:9;opacity:0;transition:opacity .12s}
+[data-tip]{cursor:default}
+details{border-top:2px solid var(--ink);padding-top:10px;margin-top:28px}
+summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+.empty{padding:24px;text-align:center;color:var(--muted);background:var(--panel)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.view{display:none}.view.on{display:block}
+footer{color:var(--muted);font-size:13px}
+@media(max-width:900px){.grid,.grid.main{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){.row{grid-template-columns:6.5em minmax(0,1fr) 5.6em;font-size:13px}.filters label{flex:1 1 140px}.filters select,.filters input{width:100%}}
+@media(prefers-reduced-motion:no-preference){.act,.bar,.col .b{transition:width .35s ease,height .35s ease}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--rule)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--muted)}.stack td:empty{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <span class="tab">Digital media plan · Q4 2026</span>
+  <h1 id="headline">Loading the media plan…</h1>
+  <p class="dek" id="dek"></p>
+</div></header>
+
+<div class="band" style="padding-top:0"><div class="wrap">
+  <form class="filters" id="filters" onsubmit="return false">
+    <label>Campaign<select id="fCampaign"></select></label>
+    <label>Platform<select id="fPlatform"></select></label>
+    <label>Vendor<select id="fVendor"></select></label>
+    <label>Campaign status<select id="fStatus"></select></label>
+    <label>From<input type="date" id="fFrom"></label>
+    <label>To<input type="date" id="fTo"></label>
+    <label>Report date<input type="date" id="fAsOf"></label>
+    <button type="button" id="reset">Reset filters</button>
+  </form>
+  <nav class="views" id="views">
+    <a href="#overview">Dashboard</a><a href="#campaigns">Campaigns</a><a href="#budget">Budget</a><a href="#vendors">Vendors</a><a href="#invoices">Invoices</a><a href="#timeline">Timeline</a><a href="#deliverables">Deliverables</a>
+  </nav>
+
+  <section class="view" id="v-overview">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid main">
+      <div class="panel">
+        <h2>Planned vs actual budget by platform</h2>
+        <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Actual spend</span><span><i class="sw" style="border:1.5px solid var(--track);background:var(--track-bg)"></i>Planned budget</span><span><i class="sw" style="background:var(--s2)"></i>Above 80% used</span><span>┆ Forecast at current pace</span></div>
+        <div class="rows" id="cPlatform"></div>
+      </div>
+      <div class="panel shade">
+        <h2>What needs attention</h2>
+        <ul class="ins" id="insights"></ul>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:28px">
+      <div class="panel"><h2>Platform-wise budget distribution</h2><p class="note">Share of planned budget</p><div id="cDist"></div></div>
+      <div class="panel"><h2>Monthly marketing expenditure</h2><p class="note">Actual spend logged per month</p><div id="cMonth"></div></div>
+      <div class="panel"><h2>Campaign-wise expenditure</h2><p class="note">Actual spend to date</p><div class="rows" id="cCampaign"></div></div>
+      <div class="panel"><h2>Vendor-wise spending</h2><p class="note">Spend routed through each vendor</p><div class="rows" id="cVendor"></div></div>
+      <div class="panel"><h2>Paid vs pending invoices</h2><p class="note">Invoice amount by payment status</p><div id="cInv"></div></div>
+      <div class="panel"><h2>Campaign status distribution</h2><p class="note">Number of campaigns</p><div class="rows" id="cStatus"></div></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-campaigns"><h2 style="margin-top:22px">Module 1 · Campaign planning</h2><p class="note">Objectives, platforms, owners, dates and budget health. Forecast = spend per elapsed day × campaign length.</p><div id="tCampaigns"></div></section>
+  <section class="view" id="v-budget"><h2 style="margin-top:22px">Module 2 · Budget allocation tracker</h2><p class="note">Remaining = planned − actual. Utilization = actual ÷ planned.</p><div class="scroll" id="tBudget"></div></section>
+  <section class="view" id="v-vendors"><h2 style="margin-top:22px">Module 3 · Vendor management</h2><p class="note">Contracts, spend to date, invoiced and outstanding amounts.</p><div class="scroll" id="tVendors"></div></section>
+  <section class="view" id="v-invoices"><h2 style="margin-top:22px">Module 4 · Invoice monitoring</h2><p class="note">Status = Paid if a payment date exists, Overdue if past due on the report date, otherwise Pending.</p><div class="kpis" id="invKpis"></div><div id="tInvoices"></div></section>
+  <section class="view" id="v-timeline"><h2 style="margin-top:22px">Module 5 · Campaign timeline</h2><div class="legend"><span class="chip" style="--c:var(--good)">Completed</span><span class="chip" style="--c:var(--s1)">In progress</span><span class="chip" style="--c:var(--neutral)">Pending</span><span class="chip" style="--c:var(--crit)">Delayed</span><span style="color:var(--red);font-weight:600">│ Report date</span></div><div id="gantt"></div></section>
+  <section class="view" id="v-deliverables"><h2 style="margin-top:22px">Module 6 · Deliverables tracking</h2><p class="note">Delayed = not completed and the deadline is before the report date.</p><div id="tDeliv"></div></section>
+
+  <details>
+    <summary>Use your own data</summary>
+    <p class="note">Paste JSON with the keys Campaigns, Vendors, Spend_Log, Invoices and Tasks (same columns as the CSV files in the project), then load it. Sample data is fictional.</p>
+    <textarea id="paste" spellcheck="false" aria-label="Dataset JSON"></textarea>
+    <div class="btns"><button type="button" id="load">Load data</button><button type="button" id="copy">Copy current data</button><button type="button" id="restore">Restore sample data</button><span class="note" id="msg" role="status"></span></div>
+  </details>
+</div></div>
+<footer class="band" style="padding-top:0"><div class="wrap">Digital Media Planning &amp; Budget Tracker · sample data for a fictional company, Oct–Dec 2026, total budget ₹10,00,000.</div></footer>
+<div id="tip" role="tooltip"></div>
+
+<script>
+{
+const SAMPLE = {"Campaigns": [{"Campaign ID": "C101", "Campaign Name": "Product Launch", "Platform": "Instagram", "Objective": "Awareness", "Target Audience": "18-30, urban, lifestyle", "Owner": "Riya Sharma", "Start Date": "2026-10-01", "End Date": "2026-11-15", "Planned Budget": 160000, "Status": "Completed"}, {"Campaign ID": "C102", "Campaign Name": "Winter Sale", "Platform": "Google Ads", "Objective": "Conversions", "Target Audience": "In-market shoppers", "Owner": "Arjun Mehta", "Start Date": "2026-10-20", "End Date": "2026-12-25", "Planned Budget": 300000, "Status": "Active"}, {"Campaign ID": "C103", "Campaign Name": "Brand Awareness", "Platform": "YouTube", "Objective": "Reach", "Target Audience": "18-45, all metros", "Owner": "Neha Verma", "Start Date": "2026-10-10", "End Date": "2026-12-10", "Planned Budget": 200000, "Status": "Active"}, {"Campaign ID": "C104", "Campaign Name": "Hiring Campaign", "Platform": "LinkedIn", "Objective": "Leads", "Target Audience": "Engineers & PMs, 2-8 yrs", "Owner": "Karan Gupta", "Start Date": "2026-10-15", "End Date": "2026-12-20", "Planned Budget": 150000, "Status": "Active"}, {"Campaign ID": "C105", "Campaign Name": "Festive Offers", "Platform": "Facebook", "Objective": "Engagement", "Target Audience": "25-50, tier 1-2 cities", "Owner": "Pooja Iyer", "Start Date": "2026-10-05", "End Date": "2026-11-30", "Planned Budget": 150000, "Status": "Active"}, {"Campaign ID": "C106", "Campaign Name": "New Year Teaser", "Platform": "Instagram", "Objective": "Awareness", "Target Audience": "18-30, urban", "Owner": "Riya Sharma", "Start Date": "2026-12-05", "End Date": "2026-12-31", "Planned Budget": 40000, "Status": "Planned"}], "Vendors": [{"Vendor ID": "V101", "Vendor Name": "ABC Media", "Service": "Social Ads", "Campaign ID": "C101", "Contract Amount": 160000, "Status": "Active"}, {"Vendor ID": "V102", "Vendor Name": "XYZ Digital", "Service": "Google Ads", "Campaign ID": "C102", "Contract Amount": 300000, "Status": "Active"}, {"Vendor ID": "V103", "Vendor Name": "Creative Studio", "Service": "Video Ads", "Campaign ID": "C103", "Contract Amount": 150000, "Status": "Active"}, {"Vendor ID": "V104", "Vendor Name": "Media Solutions", "Service": "Lead Generation", "Campaign ID": "C104", "Contract Amount": 100000, "Status": "Active"}, {"Vendor ID": "V105", "Vendor Name": "Social Spark", "Service": "Facebook Ads", "Campaign ID": "C105", "Contract Amount": 120000, "Status": "Active"}, {"Vendor ID": "V106", "Vendor Name": "PixelCraft", "Service": "Influencer Marketing", "Campaign ID": "C106", "Contract Amount": 40000, "Status": "Pending"}], "Spend_Log": [{"Spend ID": "S001", "Date": "2026-10-01", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 18500}, {"Spend ID": "S002", "Date": "2026-10-05", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 11000}, {"Spend ID": "S003", "Date": "2026-10-06", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 12000}, {"Spend ID": "S004", "Date": "2026-10-10", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 16000}, {"Spend ID": "S005", "Date": "2026-10-10", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 12500}, {"Spend ID": "S006", "Date": "2026-10-11", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 14500}, {"Spend ID": "S007", "Date": "2026-10-15", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 18000}, {"Spend ID": "S008", "Date": "2026-10-15", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 9000}, {"Spend ID": "S009", "Date": "2026-10-15", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 14500}, {"Spend ID": "S010", "Date": "2026-10-16", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 14000}, {"Spend ID": "S011", "Date": "2026-10-20", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 33000}, {"Spend ID": "S012", "Date": "2026-10-20", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 11000}, {"Spend ID": "S013", "Date": "2026-10-20", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 9000}, {"Spend ID": "S014", "Date": "2026-10-20", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 13000}, {"Spend ID": "S015", "Date": "2026-10-21", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 19500}, {"Spend ID": "S016", "Date": "2026-10-25", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 39500}, {"Spend ID": "S017", "Date": "2026-10-25", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 18000}, {"Spend ID": "S018", "Date": "2026-10-25", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 14500}, {"Spend ID": "S019", "Date": "2026-10-25", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 14500}, {"Spend ID": "S020", "Date": "2026-10-26", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 19000}, {"Spend ID": "S021", "Date": "2026-10-30", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 28500}, {"Spend ID": "S022", "Date": "2026-10-30", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 17000}, {"Spend ID": "S023", "Date": "2026-10-30", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 12500}, {"Spend ID": "S024", "Date": "2026-10-30", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 12500}, {"Spend ID": "S025", "Date": "2026-10-31", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 21000}, {"Spend ID": "S026", "Date": "2026-11-04", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 32500}, {"Spend ID": "S027", "Date": "2026-11-04", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 14000}, {"Spend ID": "S028", "Date": "2026-11-04", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 14000}, {"Spend ID": "S029", "Date": "2026-11-04", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 13500}, {"Spend ID": "S030", "Date": "2026-11-05", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 13000}, {"Spend ID": "S031", "Date": "2026-11-09", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 43000}, {"Spend ID": "S032", "Date": "2026-11-09", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 12000}, {"Spend ID": "S033", "Date": "2026-11-09", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 13500}, {"Spend ID": "S034", "Date": "2026-11-09", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 8500}, {"Spend ID": "S035", "Date": "2026-11-10", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 16000}, {"Spend ID": "S036", "Date": "2026-11-14", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 40500}, {"Spend ID": "S037", "Date": "2026-11-14", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 19500}, {"Spend ID": "S038", "Date": "2026-11-14", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 12000}, {"Spend ID": "S039", "Date": "2026-11-14", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 10000}, {"Spend ID": "S040", "Date": "2026-11-15", "Campaign ID": "C101", "Vendor ID": "V101", "Amount": 12500}, {"Spend ID": "S041", "Date": "2026-11-19", "Campaign ID": "C102", "Vendor ID": "V102", "Amount": 33000}, {"Spend ID": "S042", "Date": "2026-11-19", "Campaign ID": "C103", "Vendor ID": "V103", "Amount": 14500}, {"Spend ID": "S043", "Date": "2026-11-19", "Campaign ID": "C104", "Vendor ID": "V104", "Amount": 15500}, {"Spend ID": "S044", "Date": "2026-11-19", "Campaign ID": "C105", "Vendor ID": "V105", "Amount": 10000}], "Invoices": [{"Invoice ID": "INV101", "Vendor ID": "V101", "Campaign ID": "C101", "Invoice Amount": 45000, "Invoice Date": "2026-10-17", "Due Date": "2026-11-01", "Payment Date": "2026-10-31"}, {"Invoice ID": "INV102", "Vendor ID": "V103", "Campaign ID": "C103", "Invoice Amount": 34000, "Invoice Date": "2026-10-17", "Due Date": "2026-11-01", "Payment Date": "2026-10-30"}, {"Invoice ID": "INV103", "Vendor ID": "V104", "Campaign ID": "C104", "Invoice Amount": 9000, "Invoice Date": "2026-10-17", "Due Date": "2026-11-01", "Payment Date": "2026-10-31"}, {"Invoice ID": "INV104", "Vendor ID": "V105", "Campaign ID": "C105", "Invoice Amount": 38000, "Invoice Date": "2026-10-17", "Due Date": "2026-11-01", "Payment Date": "2026-10-28"}, {"Invoice ID": "INV105", "Vendor ID": "V101", "Campaign ID": "C101", "Invoice Amount": 73500, "Invoice Date": "2026-11-02", "Due Date": "2026-11-17", "Payment Date": "2026-11-15"}, {"Invoice ID": "INV106", "Vendor ID": "V102", "Campaign ID": "C102", "Invoice Amount": 101000, "Invoice Date": "2026-11-02", "Due Date": "2026-11-17", "Payment Date": "2026-11-14"}, {"Invoice ID": "INV107", "Vendor ID": "V103", "Campaign ID": "C103", "Invoice Amount": 46000, "Invoice Date": "2026-11-02", "Due Date": "2026-11-17", "Payment Date": null}, {"Invoice ID": "INV108", "Vendor ID": "V104", "Campaign ID": "C104", "Invoice Amount": 36000, "Invoice Date": "2026-11-02", "Due Date": "2026-11-17", "Payment Date": null}, {"Invoice ID": "INV109", "Vendor ID": "V105", "Campaign ID": "C105", "Invoice Amount": 40000, "Invoice Date": "2026-11-02", "Due Date": "2026-11-17", "Payment Date": null}, {"Invoice ID": "INV110", "Vendor ID": "V101", "Campaign ID": "C101", "Invoice Amount": 41500, "Invoice Date": "2026-11-17", "Due Date": "2026-12-02", "Payment Date": null}, {"Invoice ID": "INV111", "Vendor ID": "V102", "Campaign ID": "C102", "Invoice Amount": 116000, "Invoice Date": "2026-11-17", "Due Date": "2026-12-02", "Payment Date": null}, {"Invoice ID": "INV112", "Vendor ID": "V103", "Campaign ID": "C103", "Invoice Amount": 45500, "Invoice Date": "2026-11-17", "Due Date": "2026-12-02", "Payment Date": null}, {"Invoice ID": "INV113", "Vendor ID": "V104", "Campaign ID": "C104", "Invoice Amount": 39500, "Invoice Date": "2026-11-17", "Due Date": "2026-12-02", "Payment Date": null}, {"Invoice ID": "INV114", "Vendor ID": "V105", "Campaign ID": "C105", "Invoice Amount": 32000, "Invoice Date": "2026-11-17", "Due Date": "2026-12-02", "Payment Date": null}], "Tasks": [{"Task ID": "T001", "Campaign ID": "C101", "Task / Deliverable": "Creative Design", "Type": "Timeline", "Assigned To": "Design Team", "Start Date": "2026-09-24", "End Date": "2026-09-28", "Status": "Completed"}, {"Task ID": "T002", "Campaign ID": "C101", "Task / Deliverable": "Ad Approval", "Type": "Timeline", "Assigned To": "Riya Sharma", "Start Date": "2026-09-29", "End Date": "2026-09-30", "Status": "Completed"}, {"Task ID": "T003", "Campaign ID": "C101", "Task / Deliverable": "Campaign Launch", "Type": "Timeline", "Assigned To": "ABC Media", "Start Date": "2026-10-01", "End Date": "2026-11-15", "Status": "Completed"}, {"Task ID": "T004", "Campaign ID": "C101", "Task / Deliverable": "Instagram Creatives", "Type": "Deliverable", "Assigned To": "Design Team", "Start Date": "2026-09-24", "End Date": "2026-09-28", "Status": "Completed"}, {"Task ID": "T005", "Campaign ID": "C101", "Task / Deliverable": "Reels Cut-downs", "Type": "Deliverable", "Assigned To": "Video Team", "Start Date": "2026-10-10", "End Date": "2026-10-18", "Status": "Completed"}, {"Task ID": "T006", "Campaign ID": "C102", "Task / Deliverable": "Landing Page", "Type": "Timeline", "Assigned To": "Web Team", "Start Date": "2026-10-12", "End Date": "2026-10-19", "Status": "Completed"}, {"Task ID": "T007", "Campaign ID": "C102", "Task / Deliverable": "Keyword Research", "Type": "Timeline", "Assigned To": "XYZ Digital", "Start Date": "2026-10-14", "End Date": "2026-10-19", "Status": "Completed"}, {"Task ID": "T008", "Campaign ID": "C102", "Task / Deliverable": "Campaign Live", "Type": "Timeline", "Assigned To": "XYZ Digital", "Start Date": "2026-10-20", "End Date": "2026-12-25", "Status": "In Progress"}, {"Task ID": "T009", "Campaign ID": "C102", "Task / Deliverable": "Search Ad Copy", "Type": "Deliverable", "Assigned To": "Content Team", "Start Date": "2026-10-14", "End Date": "2026-10-18", "Status": "Completed"}, {"Task ID": "T010", "Campaign ID": "C102", "Task / Deliverable": "Year-end Offer Banners", "Type": "Deliverable", "Assigned To": "Design Team", "Start Date": "2026-11-15", "End Date": "2026-11-28", "Status": "In Progress"}, {"Task ID": "T011", "Campaign ID": "C103", "Task / Deliverable": "Script & Storyboard", "Type": "Timeline", "Assigned To": "Creative Studio", "Start Date": "2026-09-25", "End Date": "2026-10-03", "Status": "Completed"}, {"Task ID": "T012", "Campaign ID": "C103", "Task / Deliverable": "Campaign Live", "Type": "Timeline", "Assigned To": "Creative Studio", "Start Date": "2026-10-10", "End Date": "2026-12-10", "Status": "In Progress"}, {"Task ID": "T013", "Campaign ID": "C103", "Task / Deliverable": "Promotional Video (30s)", "Type": "Deliverable", "Assigned To": "Video Team", "Start Date": "2026-10-01", "End Date": "2026-10-08", "Status": "Completed"}, {"Task ID": "T014", "Campaign ID": "C103", "Task / Deliverable": "Bumper Ads (6s)", "Type": "Deliverable", "Assigned To": "Video Team", "Start Date": "2026-11-05", "End Date": "2026-11-18", "Status": "In Progress"}, {"Task ID": "T015", "Campaign ID": "C104", "Task / Deliverable": "Job Post Copy", "Type": "Deliverable", "Assigned To": "Content Team", "Start Date": "2026-10-08", "End Date": "2026-10-12", "Status": "Completed"}, {"Task ID": "T016", "Campaign ID": "C104", "Task / Deliverable": "Lead Form Setup", "Type": "Timeline", "Assigned To": "Media Solutions", "Start Date": "2026-10-10", "End Date": "2026-10-14", "Status": "Completed"}, {"Task ID": "T017", "Campaign ID": "C104", "Task / Deliverable": "Campaign Live", "Type": "Timeline", "Assigned To": "Media Solutions", "Start Date": "2026-10-15", "End Date": "2026-12-20", "Status": "In Progress"}, {"Task ID": "T018", "Campaign ID": "C104", "Task / Deliverable": "Employer Brand Video", "Type": "Deliverable", "Assigned To": "Video Team", "Start Date": "2026-11-10", "End Date": "2026-11-20", "Status": "Pending"}, {"Task ID": "T019", "Campaign ID": "C105", "Task / Deliverable": "Festive Creatives", "Type": "Deliverable", "Assigned To": "Design Team", "Start Date": "2026-09-28", "End Date": "2026-10-03", "Status": "Completed"}, {"Task ID": "T020", "Campaign ID": "C105", "Task / Deliverable": "Campaign Live", "Type": "Timeline", "Assigned To": "Social Spark", "Start Date": "2026-10-05", "End Date": "2026-11-30", "Status": "In Progress"}, {"Task ID": "T021", "Campaign ID": "C105", "Task / Deliverable": "Retargeting Audience", "Type": "Timeline", "Assigned To": "Social Spark", "Start Date": "2026-11-01", "End Date": "2026-11-06", "Status": "Completed"}, {"Task ID": "T022", "Campaign ID": "C106", "Task / Deliverable": "Influencer Shortlist", "Type": "Timeline", "Assigned To": "PixelCraft", "Start Date": "2026-11-20", "End Date": "2026-11-30", "Status": "In Progress"}, {"Task ID": "T023", "Campaign ID": "C106", "Task / Deliverable": "Teaser Creatives", "Type": "Deliverable", "Assigned To": "Design Team", "Start Date": "2026-11-25", "End Date": "2026-12-03", "Status": "Pending"}, {"Task ID": "T024", "Campaign ID": "C106", "Task / Deliverable": "Campaign Launch", "Type": "Timeline", "Assigned To": "PixelCraft", "Start Date": "2026-12-05", "End Date": "2026-12-31", "Status": "Pending"}]};
+let DATA = JSON.parse(JSON.stringify(SAMPLE));
+const SNAP = "2026-11-23";
+const PLAT = ["Instagram","Google Ads","YouTube","Facebook","LinkedIn"];
+const PCOL = {"Instagram":"var(--s1)","Google Ads":"var(--s2)","YouTube":"var(--s3)","Facebook":"var(--s4)","LinkedIn":"var(--s5)"};
+const STC = {Paid:"var(--good)",Pending:"var(--warn)",Overdue:"var(--crit)",Completed:"var(--good)","In Progress":"var(--s1)",Active:"var(--s1)",Planned:"var(--neutral)",Paused:"var(--warn)",Delayed:"var(--crit)","On Track":"var(--good)"};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dt = s => s ? new Date(s + "T00:00:00Z") : null;
+const days = (a, b) => Math.round((a - b) / 864e5);
+const inr = n => "₹" + Math.round(n).toLocaleString("en-IN");
+const lakh = n => Math.abs(n) >= 1e5 ? "₹" + parseFloat((n / 1e5).toFixed(2)) + "L" : Math.abs(n) >= 1e3 ? "₹" + parseFloat((n / 1e3).toFixed(1)) + "k" : inr(n);
+const pct = x => (isFinite(x) ? Math.round(x * 100) : 0) + "%";
+const fd = s => s ? dt(s).toLocaleDateString("en-GB", {day: "2-digit", month: "short", timeZone: "UTC"}) : "—";
+const chip = s => `<span class="chip" style="--c:${STC[s] || "var(--neutral)"}">${esc(s)}</span>`;
+const sum = (a, f) => a.reduce((t, x) => t + (+f(x) || 0), 0);
+
+function opts(id, label, vals) {
+  const cur = $(id).value;
+  $(id).innerHTML = `<option value="">${label}</option>` + vals.map(v => `<option value="${esc(v[0])}">${esc(v[1])}</option>`).join("");
+  if (vals.some(v => v[0] === cur)) $(id).value = cur;
+}
+function setupFilters() {
+  opts("fCampaign", "All campaigns", DATA.Campaigns.map(c => [c["Campaign ID"], c["Campaign ID"] + " · " + c["Campaign Name"]]));
+  const plats = [...new Set([...PLAT, ...DATA.Campaigns.map(c => c.Platform)])].filter(p => DATA.Campaigns.some(c => c.Platform === p));
+  opts("fPlatform", "All platforms", plats.map(p => [p, p]));
+  opts("fVendor", "All vendors", DATA.Vendors.map(v => [v["Vendor ID"], v["Vendor Name"]]));
+  opts("fStatus", "All statuses", [...new Set(DATA.Campaigns.map(c => c.Status))].map(s => [s, s]));
+}
+function resetFilters() {
+  ["fCampaign","fPlatform","fVendor","fStatus"].forEach(i => $(i).value = "");
+  const ds = [...DATA.Campaigns.map(c => c["Start Date"]), ...DATA.Spend_Log.map(s => s.Date)].filter(Boolean).sort();
+  const de = [...DATA.Campaigns.map(c => c["End Date"])].filter(Boolean).sort();
+  $("fFrom").value = ds[0] || ""; $("fTo").value = de[de.length - 1] || "";
+  if (!$("fAsOf").value) $("fAsOf").value = SNAP;
+}
+
+function model() {
+  const F = {c: $("fCampaign").value, p: $("fPlatform").value, v: $("fVendor").value, s: $("fStatus").value, from: dt($("fFrom").value), to: dt($("fTo").value), asOf: dt($("fAsOf").value) || dt(SNAP)};
+  const vCamps = F.v ? new Set([...DATA.Vendors.filter(v => v["Vendor ID"] === F.v).map(v => v["Campaign ID"]), ...DATA.Spend_Log.filter(s => s["Vendor ID"] === F.v).map(s => s["Campaign ID"])]) : null;
+  const camps = DATA.Campaigns.filter(c => (!F.c || c["Campaign ID"] === F.c) && (!F.p || c.Platform === F.p) && (!F.s || c.Status === F.s) && (!vCamps || vCamps.has(c["Campaign ID"])));
+  const ids = new Set(camps.map(c => c["Campaign ID"]));
+  const inRange = s => { const d = dt(s); return d && (!F.from || d >= F.from) && (!F.to || d <= F.to); };
+  const spend = DATA.Spend_Log.filter(s => ids.has(s["Campaign ID"]) && (!F.v || s["Vendor ID"] === F.v) && inRange(s.Date));
+  const invoices = DATA.Invoices.filter(i => ids.has(i["Campaign ID"]) && (!F.v || i["Vendor ID"] === F.v) && inRange(i["Invoice Date"])).map(i => {
+    const st = i["Payment Date"] ? "Paid" : dt(i["Due Date"]) < F.asOf ? "Overdue" : "Pending";
+    return {...i, st, late: st === "Overdue" ? days(F.asOf, dt(i["Due Date"])) : 0};
+  });
+  const tasks = DATA.Tasks.filter(t => ids.has(t["Campaign ID"]) && (!F.from || dt(t["End Date"]) >= F.from) && (!F.to || dt(t["Start Date"]) <= F.to)).map(t => {
+    const delayed = t.Status !== "Completed" && dt(t["End Date"]) < F.asOf;
+    return {...t, delayed, late: delayed ? days(F.asOf, dt(t["End Date"])) : 0};
+  });
+  const vendors = DATA.Vendors.filter(v => (!F.v || v["Vendor ID"] === F.v) && (ids.has(v["Campaign ID"]) || spend.some(s => s["Vendor ID"] === v["Vendor ID"])));
+  const cRows = camps.map(c => {
+    const act = sum(spend.filter(s => s["Campaign ID"] === c["Campaign ID"]), s => s.Amount);
+    const st = dt(c["Start Date"]), en = dt(c["End Date"]);
+    const total = days(en, st) + 1, elapsed = Math.min(days(F.asOf < en ? F.asOf : en, st) + 1, total);
+    const fc = c.Status === "Active" && elapsed > 0 ? act / elapsed * total : act;
+    return {...c, act, rem: c["Planned Budget"] - act, util: c["Planned Budget"] ? act / c["Planned Budget"] : 0, left: Math.max(0, days(en, F.asOf)), fc};
+  });
+  const pRows = [...new Set(cRows.map(c => c.Platform))].sort((a, b) => PLAT.indexOf(a) - PLAT.indexOf(b)).map(p => {
+    const cs = cRows.filter(c => c.Platform === p);
+    const plan = sum(cs, c => c["Planned Budget"]), act = sum(cs, c => c.act);
+    return {p, plan, act, rem: plan - act, util: plan ? act / plan : 0, fc: sum(cs, c => c.fc)};
+  });
+  return {F, camps: cRows, plats: pRows, spend, invoices, tasks, vendors};
+}
+
+function kpi(l, v, s, alert) { return `<div class="kpi${alert ? " alert" : ""}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s || "&nbsp;"}</div></div>`; }
+function hbars(rows, max, color) {
+  if (!rows.length) return `<div class="empty">No data for these filters</div>`;
+  return rows.map(r => `<div class="row" data-tip="${esc(r.tip || r.n + ": " + inr(r.v))}"><span class="n">${esc(r.n)}</span><div class="bar" style="width:${max ? r.v / max * 100 : 0}%;background:${r.c || color || "var(--s1)"}"></div><span class="num">${r.label || lakh(r.v)}</span></div>`).join("");
+}
+function table(cols, rows, cls) {
+  if (!rows.length) return `<div class="empty">No rows for these filters</div>`;
+  return `<table class="${cls || ""}"><thead><tr>${cols.map(c => `<th class="${c.r ? "r" : ""}">${c.h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${cols.map(c => `<td class="${c.r ? "r" : c.nw ? "nw" : ""}">${c.f(r)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+function render() {
+  const M = model();
+  const plan = sum(M.camps, c => c["Planned Budget"]), act = sum(M.spend, s => s.Amount), util = plan ? act / plan : 0;
+  const pend = M.invoices.filter(i => i.st !== "Paid"), over = M.invoices.filter(i => i.st === "Overdue");
+  const delayed = M.tasks.filter(t => t.delayed && t.Type === "Deliverable");
+  const activeV = M.vendors.filter(v => v.Status === "Active").length;
+  const asOfTxt = M.F.asOf.toLocaleDateString("en-GB", {day: "numeric", month: "long", year: "numeric", timeZone: "UTC"});
+  const risk = M.camps.filter(c => c.Status === "Active" && c.fc > c["Planned Budget"] * 1.05).sort((a, b) => (b.fc - b["Planned Budget"]) - (a.fc - a["Planned Budget"]));
+
+  $("headline").textContent = risk.length
+    ? `${pct(util)} of the budget is spent, and ${risk[0]["Campaign Name"]} is on pace to overshoot by ${lakh(risk[0].fc - risk[0]["Planned Budget"])}`
+    : plan ? `${pct(util)} of the ${lakh(plan)} budget is spent and every active campaign is on pace` : "No campaigns match these filters";
+  $("dek").textContent = `${lakh(act)} spent of ${lakh(plan)} planned across ${M.camps.length} campaign${M.camps.length === 1 ? "" : "s"} on ${M.plats.length} platform${M.plats.length === 1 ? "" : "s"}. Report date ${asOfTxt}.`;
+
+  $("kpis").innerHTML = [
+    kpi("Total marketing budget", lakh(plan), inr(plan)),
+    kpi("Actual marketing spend", lakh(act), inr(act)),
+    kpi("Remaining budget", lakh(plan - act), inr(plan - act)),
+    kpi("Budget utilization", pct(util), util > .9 ? "Above 90%" : "of planned budget", util > .9),
+    kpi("Total campaigns", M.camps.length, `${M.camps.filter(c => c.Status === "Active").length} active`),
+    kpi("Active vendors", activeV, `${M.vendors.length} in total`),
+    kpi("Pending invoices", pend.length, lakh(sum(pend, i => i["Invoice Amount"])) + " unpaid"),
+    kpi("Overdue invoices", lakh(sum(over, i => i["Invoice Amount"])), `${over.length} invoice${over.length === 1 ? "" : "s"} past due`, over.length > 0),
+    kpi("Delayed deliverables", delayed.length, delayed.length ? "past deadline" : "all on track", delayed.length > 0)
+  ].join("");
+
+  const pmax = Math.max(1, ...M.plats.map(p => Math.max(p.plan, p.fc, p.act)));
+  $("cPlatform").innerHTML = M.plats.length ? M.plats.map(p => `<div class="row" data-tip="${esc(`${p.p}: ${inr(p.act)} of ${inr(p.plan)} (${pct(p.util)}). Forecast ${inr(p.fc)}`)}"><span class="n">${esc(p.p)}</span><div class="bullet"><div class="plan" style="width:${p.plan / pmax * 100}%"></div><div class="act${p.util > .8 ? " hot" : ""}" style="width:${p.act / pmax * 100}%"></div><div class="fc" style="left:${Math.min(p.fc / pmax * 100, 100)}%"></div></div><span class="num">${lakh(p.act)} / ${lakh(p.plan)}</span></div>`).join("") : `<div class="empty">No data for these filters</div>`;
+
+  const tot = sum(M.plats, p => p.plan);
+  $("cDist").innerHTML = tot ? `<div class="stackbar">${M.plats.filter(p => p.plan).map(p => `<div style="flex:${p.plan};background:${PCOL[p.p] || "var(--neutral)"}" data-tip="${esc(`${p.p}: ${inr(p.plan)} (${pct(p.plan / tot)})`)}">${p.plan / tot >= .12 ? pct(p.plan / tot) : ""}</div>`).join("")}</div><div class="legend" style="margin-top:12px">${M.plats.filter(p => p.plan).map(p => `<span><i class="sw" style="background:${PCOL[p.p] || "var(--neutral)"}"></i>${esc(p.p)} · ${lakh(p.plan)} (${pct(p.plan / tot)})</span>`).join("")}</div>` : `<div class="empty">No data for these filters</div>`;
+
+  const months = {};
+  const mf = M.F.from || dt("2026-10-01"), mt = M.F.to || dt("2026-12-31");
+  for (let d = new Date(Date.UTC(mf.getUTCFullYear(), mf.getUTCMonth(), 1)); d <= mt; d.setUTCMonth(d.getUTCMonth() + 1)) months[d.toISOString().slice(0, 7)] = 0;
+  M.spend.forEach(s => { const k = s.Date.slice(0, 7); months[k] = (months[k] || 0) + s.Amount; });
+  const mk = Object.keys(months).sort(), mmax = Math.max(1, ...Object.values(months));
+  const mname = k => new Date(k + "-01T00:00:00Z").toLocaleDateString("en-GB", {month: "short", year: "2-digit", timeZone: "UTC"});
+  $("cMonth").innerHTML = `<div class="cols">${mk.map(k => `<div class="col" data-tip="${esc(mname(k) + ": " + inr(months[k]))}"><span class="t">${months[k] ? lakh(months[k]) : "—"}</span><div class="b" style="height:${months[k] / mmax * 82}%"></div></div>`).join("")}</div><div class="collab">${mk.map(k => `<div>${mname(k)}</div>`).join("")}</div>`;
+
+  const cr = M.camps.map(c => ({n: c["Campaign Name"], v: c.act, c: PCOL[c.Platform], tip: `${c["Campaign Name"]} (${c.Platform}): ${inr(c.act)} of ${inr(c["Planned Budget"])}`})).sort((a, b) => b.v - a.v);
+  $("cCampaign").innerHTML = hbars(cr, Math.max(...cr.map(r => r.v), 1)) + (cr.length ? `<div class="legend">${[...new Set(M.camps.map(c => c.Platform))].map(p => `<span><i class="sw" style="background:${PCOL[p]}"></i>${esc(p)}</span>`).join("")}</div>` : "");
+  const vr = M.vendors.map(v => ({n: v["Vendor Name"], v: sum(M.spend.filter(s => s["Vendor ID"] === v["Vendor ID"]), s => s.Amount)})).sort((a, b) => b.v - a.v);
+  $("cVendor").innerHTML = hbars(vr, Math.max(...vr.map(r => r.v), 1), "var(--slate)");
+
+  const ist = ["Paid","Pending","Overdue"].map(s => ({s, v: sum(M.invoices.filter(i => i.st === s), i => i["Invoice Amount"]), n: M.invoices.filter(i => i.st === s).length}));
+  const itot = sum(ist, x => x.v);
+  $("cInv").innerHTML = itot ? `<div class="stackbar">${ist.filter(x => x.v).map(x => `<div style="flex:${x.v};background:${STC[x.s]};color:${x.s === "Pending" ? "#121212" : "#fff"}" data-tip="${esc(`${x.s}: ${inr(x.v)} · ${x.n} invoices`)}">${x.v / itot >= .14 ? pct(x.v / itot) : ""}</div>`).join("")}</div><div class="rows" style="margin-top:14px">${ist.map(x => `<div class="row"><span class="n">${chip(x.s)}</span><span class="note">${x.n} invoice${x.n === 1 ? "" : "s"}</span><span class="num">${inr(x.v)}</span></div>`).join("")}</div>` : `<div class="empty">No invoices for these filters</div>`;
+
+  const sr = ["Active","Completed","Planned","Paused"].map(s => ({n: s, v: M.camps.filter(c => c.Status === s).length})).filter(r => r.v || r.n !== "Paused");
+  $("cStatus").innerHTML = hbars(sr.map(r => ({...r, c: STC[r.n], label: r.v + (r.v === 1 ? " campaign" : " campaigns"), tip: `${r.n}: ${r.v}`})), Math.max(1, ...sr.map(r => r.v)));
+
+  const ins = [];
+  risk.forEach(c => ins.push([1, `<b>${esc(c["Campaign Name"])}</b> (${esc(c.Platform)}) has used ${pct(c.util)} of its budget with ${c.left} days left. At its current pace it will spend <b>${lakh(c.fc)}</b> against ${lakh(c["Planned Budget"])} planned. Cap daily spend or move budget in.`]));
+  if (over.length) {
+    const byV = {}; over.forEach(i => byV[i["Vendor ID"]] = (byV[i["Vendor ID"]] || 0) + i["Invoice Amount"]);
+    const names = Object.keys(byV).map(id => (DATA.Vendors.find(v => v["Vendor ID"] === id) || {})["Vendor Name"] || id);
+    ins.push([1, `<b>${lakh(sum(over, i => i["Invoice Amount"]))} is overdue</b> across ${over.length} invoice${over.length === 1 ? "" : "s"} (${esc(names.join(", "))}), up to ${Math.max(...over.map(i => i.late))} days late. Clear these before the next billing cycle.`]);
+  }
+  if (delayed.length) ins.push([1, `<b>${delayed.length} deliverable${delayed.length === 1 ? " is" : "s are"} past deadline</b>: ${delayed.map(t => esc(t["Task / Deliverable"]) + ` (${t.late}d)`).join(", ")}.`]);
+  const under = M.camps.filter(c => c.Status === "Active" && c.fc < c["Planned Budget"] * .95);
+  if (under.length) ins.push([0, `${under.map(c => `<b>${esc(c["Campaign Name"])}</b>`).join(" and ")} ${under.length === 1 ? "is" : "are"} pacing under plan, freeing about ${lakh(sum(under, c => c["Planned Budget"] - c.fc))} that could cover the overspend above.`]);
+  const uninv = act - sum(M.invoices, i => i["Invoice Amount"]);
+  if (uninv > 0) ins.push([0, `${lakh(uninv)} of spend has not been invoiced yet. Expect it in the next vendor bills.`]);
+  $("insights").innerHTML = ins.length ? ins.map(([b, t]) => `<li class="${b ? "bad" : ""}">${t}</li>`).join("") : `<li>Nothing needs attention for this selection.</li>`;
+
+  // Module tables
+  $("tCampaigns").innerHTML = table([
+    {h: "ID", f: r => esc(r["Campaign ID"]), nw: 1}, {h: "Campaign", f: r => `<b>${esc(r["Campaign Name"])}</b><br><span class="note">${esc(r["Target Audience"])}</span>`},
+    {h: "Platform", f: r => `<span class="chip" style="--c:${PCOL[r.Platform]}">${esc(r.Platform)}</span>`}, {h: "Objective", f: r => esc(r.Objective)}, {h: "Owner", f: r => esc(r.Owner)},
+    {h: "Dates", f: r => `${fd(r["Start Date"])} – ${fd(r["End Date"])}`, nw: 1}, {h: "Status", f: r => chip(r.Status)},
+    {h: "Planned", f: r => inr(r["Planned Budget"]), r: 1}, {h: "Actual", f: r => inr(r.act), r: 1},
+    {h: "Used", f: r => `${pct(r.util)}<div class="mini"><i style="width:${Math.min(r.util, 1) * 100}%;background:${r.util > .9 ? "var(--crit)" : "var(--s1)"}"></i></div>`, r: 1},
+    {h: "Forecast", f: r => `${inr(r.fc)}${r.fc > r["Planned Budget"] * 1.05 ? `<br><span style="color:var(--crit);font-weight:600">+${lakh(r.fc - r["Planned Budget"])}</span>` : ""}`, r: 1}
+  ], M.camps, "stack");
+
+  $("tBudget").innerHTML = M.plats.length ? table([
+    {h: "Platform", f: r => r.p === "Total" ? "<b>Total</b>" : `<span class="chip" style="--c:${PCOL[r.p]}">${esc(r.p)}</span>`},
+    {h: "Planned budget", f: r => inr(r.plan), r: 1}, {h: "Actual spend", f: r => inr(r.act), r: 1}, {h: "Remaining", f: r => inr(r.rem), r: 1},
+    {h: "Utilization", f: r => `<span style="${r.util > .8 ? "color:var(--crit);font-weight:700" : ""}">${(r.util * 100).toFixed(1)}%</span>`, r: 1}, {h: "Share of budget", f: r => pct(tot ? r.plan / tot : 0), r: 1}
+  ], [...M.plats, {p: "Total", plan: tot, act: sum(M.plats, p => p.act), rem: sum(M.plats, p => p.rem), util: tot ? sum(M.plats, p => p.act) / tot : 0}]) : table([], []);
+
+  $("tVendors").innerHTML = table([
+    {h: "ID", f: r => esc(r["Vendor ID"])}, {h: "Vendor", f: r => `<b>${esc(r["Vendor Name"])}</b>`}, {h: "Service", f: r => esc(r.Service)}, {h: "Campaign", f: r => esc(r["Campaign ID"])},
+    {h: "Status", f: r => chip(r.Status)}, {h: "Contract", f: r => inr(r["Contract Amount"]), r: 1}, {h: "Spend to date", f: r => inr(r.sp), r: 1},
+    {h: "Invoiced", f: r => inr(r.inv), r: 1}, {h: "Paid", f: r => inr(r.paid), r: 1}, {h: "Outstanding", f: r => `<b>${inr(r.inv - r.paid)}</b>`, r: 1},
+    {h: "Contract used", f: r => pct(r["Contract Amount"] ? r.sp / r["Contract Amount"] : 0), r: 1}
+  ], M.vendors.map(v => { const id = v["Vendor ID"], iv = M.invoices.filter(i => i["Vendor ID"] === id); return {...v, sp: sum(M.spend.filter(s => s["Vendor ID"] === id), s => s.Amount), inv: sum(iv, i => i["Invoice Amount"]), paid: sum(iv.filter(i => i.st === "Paid"), i => i["Invoice Amount"])}; }));
+
+  $("invKpis").innerHTML = [kpi("Total invoiced", lakh(itot), M.invoices.length + " invoices"), kpi("Paid", lakh(ist[0].v), ist[0].n + " invoices"), kpi("Pending", lakh(ist[1].v), ist[1].n + " invoices"), kpi("Overdue", lakh(ist[2].v), ist[2].n + " invoices", ist[2].n > 0)].join("");
+  const vn = id => (DATA.Vendors.find(v => v["Vendor ID"] === id) || {})["Vendor Name"] || id;
+  $("tInvoices").innerHTML = table([
+    {h: "Invoice", f: r => `<b>${esc(r["Invoice ID"])}</b>`}, {h: "Vendor", f: r => esc(vn(r["Vendor ID"]))}, {h: "Campaign", f: r => esc(r["Campaign ID"])},
+    {h: "Amount", f: r => inr(r["Invoice Amount"]), r: 1}, {h: "Invoice date", f: r => fd(r["Invoice Date"]), nw: 1}, {h: "Due date", f: r => fd(r["Due Date"]), nw: 1},
+    {h: "Paid on", f: r => fd(r["Payment Date"]), nw: 1}, {h: "Status", f: r => chip(r.st) + (r.late ? ` <span class="note">${r.late}d late</span>` : "")}
+  ], [...M.invoices].sort((a, b) => ({Overdue: 0, Pending: 1, Paid: 2}[a.st] - {Overdue: 0, Pending: 1, Paid: 2}[b.st]) || a["Due Date"].localeCompare(b["Due Date"])), "stack");
+
+  $("tDeliv").innerHTML = table([
+    {h: "Deliverable", f: r => `<b>${esc(r["Task / Deliverable"])}</b>`}, {h: "Campaign", f: r => esc(r["Campaign ID"] + " · " + ((DATA.Campaigns.find(c => c["Campaign ID"] === r["Campaign ID"]) || {})["Campaign Name"] || ""))},
+    {h: "Assigned to", f: r => esc(r["Assigned To"])}, {h: "Deadline", f: r => fd(r["End Date"]), nw: 1}, {h: "Status", f: r => chip(r.Status)},
+    {h: "Flag", f: r => r.delayed ? chip("Delayed") + ` <span class="note">${r.late}d late</span>` : chip("On Track")}
+  ], M.tasks.filter(t => t.Type === "Deliverable").sort((a, b) => b.delayed - a.delayed || a["End Date"].localeCompare(b["End Date"])), "stack");
+
+  // Gantt
+  if (!M.tasks.length) { $("gantt").innerHTML = `<div class="empty">No tasks for these filters</div>`; return; }
+  const g0 = new Date(Math.min(...M.tasks.map(t => dt(t["Start Date"]))) - 2 * 864e5), g1 = new Date(Math.max(...M.tasks.map(t => dt(t["End Date"]))) + 3 * 864e5);
+  const span = days(g1, g0), xp = d => days(d, g0) / span * 100;
+  const ticks = [];
+  for (let d = new Date(Date.UTC(g0.getUTCFullYear(), g0.getUTCMonth(), 1)); d <= g1; d.setUTCDate(d.getUTCDate() + 1)) if ([1, 15].includes(d.getUTCDate()) && d >= g0) ticks.push(new Date(d));
+  const narrow = innerWidth < 600;
+  let html = `<div class="gantt" style="--gl:${narrow ? "8.5em" : "15em"}"><div class="gscale">${ticks.filter((t, i) => !narrow || t.getUTCDate() === 1).map(t => `<span style="left:${xp(t)}%">${t.toLocaleDateString("en-GB", {day: "numeric", month: "short", timeZone: "UTC"})}</span>`).join("")}</div><div style="position:relative">`;
+  const tx = xp(M.F.asOf);
+  if (tx >= 0 && tx <= 100) html += `<div class="today" style="left:calc(var(--gl) + (100% - var(--gl)) * ${tx / 100})"><span>${fd($("fAsOf").value)}</span></div>`;
+  M.camps.forEach(c => {
+    const ts = M.tasks.filter(t => t["Campaign ID"] === c["Campaign ID"]).sort((a, b) => a["Start Date"].localeCompare(b["Start Date"]));
+    if (!ts.length) return;
+    html += `<div class="ghead">${esc(c["Campaign ID"] + " · " + c["Campaign Name"])} <span class="note">· ${esc(c.Platform)}</span></div>`;
+    html += ts.map(t => { const s = t.delayed ? "Delayed" : t.Status, gc = s === "Pending" ? "var(--neutral)" : STC[s] || "var(--neutral)"; return `<div class="grow"><div class="gn">${esc(t["Task / Deliverable"])} <small>${t.Type === "Deliverable" ? "· asset" : ""}</small></div><div class="gtrack"><div class="gbar" style="--c:${gc};left:${xp(dt(t["Start Date"]))}%;width:${Math.max(xp(new Date(+dt(t["End Date"]) + 864e5)) - xp(dt(t["Start Date"])), .8)}%" data-tip="${esc(`${t["Task / Deliverable"]} · ${t["Assigned To"]} · ${fd(t["Start Date"])}–${fd(t["End Date"])} · ${s}`)}"></div></div></div>`; }).join("");
+  });
+  $("gantt").innerHTML = html + "</div></div>";
+}
+
+function route() {
+  const v = (location.hash || "#overview").slice(1);
+  const ok = ["overview","campaigns","budget","vendors","invoices","timeline","deliverables"].includes(v) ? v : "overview";
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + ok));
+  document.querySelectorAll("#views a").forEach(a => a.getAttribute("href") === "#" + ok ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+}
+
+const tip = $("tip");
+document.addEventListener("pointermove", e => {
+  const t = e.target.closest && e.target.closest("[data-tip]");
+  if (!t) { tip.style.opacity = 0; return; }
+  tip.textContent = t.dataset.tip; tip.style.opacity = 1;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px";
+  tip.style.top = Math.max(8, e.clientY - h - 12) + "px";
+});
+document.addEventListener("pointerleave", () => tip.style.opacity = 0);
+
+$("filters").addEventListener("change", render);
+$("reset").addEventListener("click", () => { $("fAsOf").value = SNAP; resetFilters(); render(); });
+addEventListener("hashchange", route);
+let rt, lw = innerWidth; const ro = new ResizeObserver(() => { if (Math.abs(innerWidth - lw) < 40) return; lw = innerWidth; clearTimeout(rt); rt = setTimeout(render, 150); }); ro.observe(document.documentElement);
+const msg = t => { $("msg").textContent = t; };
+$("load").addEventListener("click", () => {
+  try {
+    const d = JSON.parse($("paste").value);
+    for (const k of ["Campaigns","Vendors","Spend_Log","Invoices","Tasks"]) if (!Array.isArray(d[k])) throw new Error("Missing array: " + k);
+    d.Spend_Log.forEach(s => s.Amount = +s.Amount); d.Campaigns.forEach(c => c["Planned Budget"] = +c["Planned Budget"]);
+    d.Vendors.forEach(v => v["Contract Amount"] = +v["Contract Amount"]); d.Invoices.forEach(i => i["Invoice Amount"] = +i["Invoice Amount"]);
+    DATA = d; setupFilters(); resetFilters(); render(); msg("Loaded " + d.Campaigns.length + " campaigns.");
+  } catch (e) { msg("Could not load: " + e.message); }
+});
+$("copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText(JSON.stringify(DATA, null, 1)); msg("Copied to clipboard."); } catch (e) { $("paste").value = JSON.stringify(DATA, null, 1); msg("Copy blocked here; the data is in the box above."); } });
+$("restore").addEventListener("click", () => { DATA = JSON.parse(JSON.stringify(SAMPLE)); setupFilters(); $("fAsOf").value = SNAP; resetFilters(); render(); msg("Sample data restored."); });
+
+setupFilters(); resetFilters(); route(); render();
+}
+</script>
+</body>
+</html>

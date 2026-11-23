@@ -1,0 +1,25 @@
+Task ID,Campaign ID,Task / Deliverable,Type,Assigned To,Start Date,End Date,Status
+T001,C101,Creative Design,Timeline,Design Team,2026-09-24,2026-09-28,Completed
+T002,C101,Ad Approval,Timeline,Riya Sharma,2026-09-29,2026-09-30,Completed
+T003,C101,Campaign Launch,Timeline,ABC Media,2026-10-01,2026-11-15,Completed
+T004,C101,Instagram Creatives,Deliverable,Design Team,2026-09-24,2026-09-28,Completed
+T005,C101,Reels Cut-downs,Deliverable,Video Team,2026-10-10,2026-10-18,Completed
+T006,C102,Landing Page,Timeline,Web Team,2026-10-12,2026-10-19,Completed
+T007,C102,Keyword Research,Timeline,XYZ Digital,2026-10-14,2026-10-19,Completed
+T008,C102,Campaign Live,Timeline,XYZ Digital,2026-10-20,2026-12-25,In Progress
+T009,C102,Search Ad Copy,Deliverable,Content Team,2026-10-14,2026-10-18,Completed
+T010,C102,Year-end Offer Banners,Deliverable,Design Team,2026-11-15,2026-11-28,In Progress
+T011,C103,Script & Storyboard,Timeline,Creative Studio,2026-09-25,2026-10-03,Completed
+T012,C103,Campaign Live,Timeline,Creative Studio,2026-10-10,2026-12-10,In Progress
+T013,C103,Promotional Video (30s),Deliverable,Video Team,2026-10-01,2026-10-08,Completed
+T014,C103,Bumper Ads (6s),Deliverable,Video Team,2026-11-05,2026-11-18,In Progress
+T015,C104,Job Post Copy,Deliverable,Content Team,2026-10-08,2026-10-12,Completed
+T016,C104,Lead Form Setup,Timeline,Media Solutions,2026-10-10,2026-10-14,Completed
+T017,C104,Campaign Live,Timeline,Media Solutions,2026-10-15,2026-12-20,In Progress
+T018,C104,Employer Brand Video,Deliverable,Video Team,2026-11-10,2026-11-20,Pending
+T019,C105,Festive Creatives,Deliverable,Design Team,2026-09-28,2026-10-03,Completed
+T020,C105,Campaign Live,Timeline,Social Spark,2026-10-05,2026-11-30,In Progress
+T021,C105,Retargeting Audience,Timeline,Social Spark,2026-11-01,2026-11-06,Completed
+T022,C106,Influencer Shortlist,Timeline,PixelCraft,2026-11-20,2026-11-30,In Progress
+T023,C106,Teaser Creatives,Deliverable,Design Team,2026-11-25,2026-12-03,Pending
+T024,C106,Campaign Launch,Timeline,PixelCraft,2026-12-05,2026-12-31,Pending
